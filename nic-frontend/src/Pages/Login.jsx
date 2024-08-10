@@ -8,12 +8,60 @@ import {
   Container,
   CssBaseline,
   Avatar,
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+  InputAdornment,
 } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setemail] = useState("");
+  const [password, setpassword] = useState("");
+  const [open, setOpen] = useState(false);
+  const [showpassword, setShowpassword] = useState(false);
+  const [errors, setErrors] = useState({});
+
+  const [userData, setUserData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+
+  const handlepasswordVisibility = () => {
+    setShowpassword(!showpassword);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    let newValue = value;
+    if (name === "firstName" || name === "lastName") {
+      newValue = newValue.slice(0, 20); // Limit to 20 characters for Address
+      newValue = newValue.replace(/[0-9]/g, ""); // Allow only alphabets
+    } else if (name === "email") {
+      newValue = newValue.slice(0, 50); // Limit to 50 characters for email
+    }
+    setUserData({ ...userData, [name]: newValue });
+    setErrors({ ...errors, [name]: "" }); // Clear the error when input changes
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setUserData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+    });
+    setErrors({});
+    setShowpassword(false);
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -25,7 +73,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/user/auth",
+        "http://localhost:8080/api/users/auth",
         data,
         {
           headers: {
@@ -46,6 +94,32 @@ const Login = () => {
     }
   };
 
+  const handleAddUser = async () => {
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/users",
+        userData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Success:", response.data);
+      handleClose();
+    } catch (error) {
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+        setErrors(error.response.data);
+      } else if (error.request) {
+        console.error("Error request:", error.request);
+      } else {
+        console.error("Error message:", error.message);
+      }
+    }
+  };
+
   return (
     <div className="flex h-screen w-screen bg-slate-500">
       <Box
@@ -57,8 +131,7 @@ const Login = () => {
           scale: "20%",
           transformOrigin: "top left",
         }}
-      >
-      </Box>
+      ></Box>
       <Box
         sx={{
           position: "absolute",
@@ -107,12 +180,12 @@ const Login = () => {
                 required
                 fullWidth
                 id="email"
-                label="Email Address"
+                label="email Address"
                 name="email"
                 autoComplete="email"
                 autoFocus
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => setemail(e.target.value)}
                 InputProps={{
                   style: {
                     color: "white",
@@ -139,12 +212,12 @@ const Login = () => {
                 required
                 fullWidth
                 name="password"
-                label="Password"
+                label="password"
                 type="password"
                 id="password"
                 autoComplete="current-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => setpassword(e.target.value)}
                 InputProps={{
                   style: {
                     color: "white",
@@ -165,20 +238,134 @@ const Login = () => {
                   style: { color: "rgba(255, 255, 255, 0.5)" },
                 }}
               />
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
+              <Box
+                sx={{ display: "flex", justifyContent: "center", gap: "20px" }}
+              >
                 <Button
                   type="submit"
                   variant="contained"
                   color="secondary"
-                  sx={{ mt: 3, mb: 2, width: "50%", borderRadius: 3 }}
+                  onClick={handleSubmit}
+                  sx={{ mt: 3, mb: 2, width: "40%", borderRadius: 3 }}
                 >
-                  Login
+                  Sign In
+                </Button>
+                <Button
+                  type="register"
+                  variant="contained"
+                  color="secondary"
+                  onClick={setOpen}
+                  sx={{ mt: 3, mb: 2, width: "40%", borderRadius: 3 }}
+                >
+                  Sign Up
                 </Button>
               </Box>
             </Box>
           </Box>
         </Container>
       </Box>
+      <Dialog
+        open={open}
+        aria-labelledby="form-dialog-title"
+        disableEscapeKeyDown={true}
+        BackdropProps={{
+          style: { backdropFilter: "blur(5px)" },
+          invisible: true, // This will prevent backdrop click
+        }}
+      >
+        <DialogTitle
+          id="form-dialog-title"
+          className="text-center font-extrabold"
+        >
+          User Registration
+        </DialogTitle>
+        <div className="mb-3">
+          <DialogContent>
+            <Grid container spacing={2}>
+              <Grid item xs={6}>
+                <TextField
+                  label="First Name"
+                  name="firstName"
+                  value={userData.firstName}
+                  onChange={handleChange}
+                  fullWidth
+                  error={Boolean(errors.firstName)}
+                  helperText={errors.firstName}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Last Name"
+                  name="lastName"
+                  value={userData.lastName}
+                  onChange={handleChange}
+                  fullWidth
+                  error={Boolean(errors.lastName)}
+                  helperText={errors.lastName}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="email"
+                  type="email"
+                  name="email"
+                  value={userData.email}
+                  onChange={handleChange}
+                  fullWidth
+                  error={Boolean(errors.email)}
+                  helperText={errors.email}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="password"
+                  type={showpassword ? "text" : "password"}
+                  name="password"
+                  value={userData.password}
+                  onChange={handleChange}
+                  fullWidth
+                  error={Boolean(errors.password)}
+                  helperText={errors.password}
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={handlepasswordVisibility}>
+                          {showpassword ? <Visibility /> : <VisibilityOff />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+        </div>
+        <DialogActions className=" mb-4">
+          <div className="flex w-full justify-center">
+            <div className="mx-5 flex w-1/2">
+              <Button
+                onClick={handleAddUser}
+                variant="contained"
+                fullWidth
+                color="success"
+              >
+                Register
+              </Button>
+            </div>
+
+            <div className="mx-5 w-1/2">
+              <Button
+                onClick={handleClose}
+                fullWidth
+                variant="contained"
+                color="error"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };
