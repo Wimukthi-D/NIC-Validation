@@ -2,7 +2,9 @@ package net.wimukthi.nic.Controller;
 
 import lombok.AllArgsConstructor;
 import net.wimukthi.nic.Service.UserService;
+import net.wimukthi.nic.dto.LoginDto;
 import net.wimukthi.nic.dto.UserDto;
+import net.wimukthi.nic.payloadresponse.LoginMessage;
 import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,4 +39,14 @@ public class UserController {
         List<UserDto> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
+
+    //-----------Login--------
+    @PostMapping(path = "/login")
+    public ResponseEntity<?> loginUser(@RequestBody LoginDto loginDto) {
+        LoginMessage loginMessage = userService.loginUser(loginDto);
+        return ResponseEntity.ok(loginMessage);
+    }
+
+
+
 }
