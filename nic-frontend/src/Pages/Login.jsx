@@ -15,17 +15,20 @@ import {
   DialogActions,
   IconButton,
   InputAdornment,
+  Link,
 } from "@mui/material";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 
 const Login = () => {
-  const [email, setemail] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setpassword] = useState("");
   const [open, setOpen] = useState(false);
   const [showpassword, setShowpassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [openForgotPassword, setOpenForgotPassword] = useState(false);
+  const [username, setUsername] = useState("");
 
   const [userData, setUserData] = useState({
     firstName: "",
@@ -63,13 +66,20 @@ const Login = () => {
     setShowpassword(false);
   };
 
+  const handleCloseForgotPassword = () => {
+    setOpenForgotPassword(false);
+    setEmail("");
+    setErrors({});
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     const data = {
-      email: email,
+      username: username,
       password: password,
     };
+    console.log(data);
 
     try {
       const response = await axios.post(
@@ -118,6 +128,11 @@ const Login = () => {
         console.error("Error message:", error.message);
       }
     }
+  };
+
+  const handleForogotPassword = async () => {
+    console.log(email);
+    handleCloseForgotPassword();
   };
 
   return (
@@ -179,13 +194,13 @@ const Login = () => {
                 variant="outlined"
                 required
                 fullWidth
-                id="email"
-                label="email Address"
-                name="email"
-                autoComplete="email"
+                id="username"
+                label="Username"
+                name="username"
+                autoComplete="username"
                 autoFocus
-                value={email}
-                onChange={(e) => setemail(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 InputProps={{
                   style: {
                     color: "white",
@@ -260,6 +275,13 @@ const Login = () => {
                   Sign Up
                 </Button>
               </Box>
+              <Link
+                onClick={setOpenForgotPassword}
+                variant="body2"
+                sx={{ color: "white", textAlign: "center" }}
+              >
+                Forgot password?
+              </Link>
             </Box>
           </Box>
         </Container>
@@ -356,6 +378,65 @@ const Login = () => {
             <div className="mx-5 w-1/2">
               <Button
                 onClick={handleClose}
+                fullWidth
+                variant="contained"
+                color="error"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogActions>
+      </Dialog>
+      <Dialog
+        open={openForgotPassword}
+        aria-labelledby="form-dialog-title"
+        disableEscapeKeyDown={true}
+        BackdropProps={{
+          style: { backdropFilter: "blur(5px)" },
+          invisible: true, // This will prevent backdrop click
+        }}
+      >
+        <DialogTitle
+          id="form-dialog-title"
+          className="text-center font-extrabold"
+        >
+          Reset your password
+        </DialogTitle>
+        <div className="mb-3">
+          <DialogContent>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  label="Email"
+                  type="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  fullWidth
+                  error={Boolean(errors.email)}
+                  helperText={errors.email}
+                />
+              </Grid>
+            </Grid>
+          </DialogContent>
+        </div>
+        <DialogActions className=" mb-4">
+          <div className="flex w-full justify-center">
+            <div className="mx-5 flex w-1/2">
+              <Button
+                onClick={handleForogotPassword}
+                variant="contained"
+                fullWidth
+                color="success"
+              >
+                Submit
+              </Button>
+            </div>
+
+            <div className="mx-5 w-1/2">
+              <Button
+                onClick={handleCloseForgotPassword}
                 fullWidth
                 variant="contained"
                 color="error"
