@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Button,
@@ -29,7 +30,7 @@ const Login = () => {
   const [errors, setErrors] = useState({});
   const [openForgotPassword, setOpenForgotPassword] = useState(false);
   const [username, setUsername] = useState("");
-
+  const navigate = useNavigate();
   const [userData, setUserData] = useState({
     firstName: "",
     lastName: "",
@@ -83,7 +84,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/users/auth",
+        "http://localhost:8080/api/users/login",
         data,
         {
           headers: {
@@ -93,6 +94,7 @@ const Login = () => {
       );
 
       console.log("Success:", response.data);
+      navigate("/dashboard");
     } catch (error) {
       if (error.response) {
         console.error("Error response:", error.response.data);
