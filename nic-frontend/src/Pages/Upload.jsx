@@ -20,6 +20,7 @@ import Swal from "sweetalert2";
 function Upload() {
   const [files, setFiles] = useState([]);
   const [data, setData] = useState({});
+  const [savedRecords, setSavedRecords] = useState([]);
 
   const handleFileChange = (event) => {
     const selectedFiles = Array.from(event.target.files);
@@ -59,18 +60,35 @@ function Upload() {
       axios
         .post("http://localhost:3001/nic/validate", combinedData)
         .then((response) => {
-          console.log(response);
+          if (response.status === 200) {
+            Swal.fire({
+              icon: "success",
+              title: "Data has been saved successfully",
+              showConfirmButton: false,
+              timer: 1500,
+            });
+          }
+          console.log(response.data.result);
+          setSavedRecords(response.data.result);
+          Swal.fire({
+            icon: "success",
+            title: "Data has been saved successfully",
+            showConfirmButton: false,
+            timer: 1500,
+          });
+
+          setData([]);
+          setFiles([]);
+        })
+        .catch((error) => {
+          console.log(error);
+          Swal.fire({
+            icon: "error",
+            title: "An error occurred",
+            showConfirmButton: false,
+            timer: 1500,
+          });
         });
-
-      Swal.fire({
-        icon: "success",
-        title: "Data has been saved successfully",
-        showConfirmButton: false,
-        timer: 1500,
-      });
-
-      setData({});
-      setFiles([]);
     } catch (error) {
       console.log(error);
       Swal.fire({
@@ -86,7 +104,7 @@ function Upload() {
     <div className="flex flex-col w-screen h-screen">
       <Navbar />
       <div className="flex w-full h-full">
-        <div className="flex flex-col w-1/3 items-center h-full p-4 space-y-4">
+        <div className="flex flex-col w-1/3 items-center h-full p-4 space-y-4 mt-10">
           {files.map((file, index) => (
             <div key={index} className="flex items-center space-x-2">
               <input
@@ -130,7 +148,7 @@ function Upload() {
                 component="span"
                 startIcon={<UploadFile />}
               >
-                Upload CSV Files
+                Upload Files
               </Button>
             </label>
           </div>
@@ -145,7 +163,35 @@ function Upload() {
             </Button>
           </div>
         </div>
-        <div className="flex flex-col w-2/3 h-full p-4"></div>
+        <div className="flex flex-col w-2/3 h-full p-4">
+          {savedRecords.map((fileData, index) => (
+            <div key={index} className="mb-6">
+              <h2 className="text-lg font-bold mb-2">{fileData.fileName}</h2>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>NIC</TableCell>
+                      <TableCell>Birthday</TableCell>
+                      <TableCell>Gender</TableCell>
+                      <TableCell>Age</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {fileData.records.map((record, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{record.nic}</TableCell>
+                        <TableCell>{record.birthday}</TableCell>
+                        <TableCell>{record.gender}</TableCell>
+                        <TableCell>{record.age}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

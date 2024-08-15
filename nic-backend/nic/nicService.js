@@ -6,6 +6,11 @@ app.use(express.json());
 const dayjs = require("dayjs");
 
 const extractNicInfo = (nic) => {
+  // Ensure NIC is treated as a string
+  if (typeof nic !== "string") {
+    nic = String(nic);
+  }
+
   if (!nic || (nic.length !== 10 && nic.length !== 12)) {
     return { birthday: "Invalid NIC", gender: "N/A", age: "N/A" };
   }
@@ -42,11 +47,24 @@ app.post("/validate", (req, res) => {
     const { fileName, data: records } = fileData;
 
     const validatedRecords = records.map((record) => {
-      const { nic, ...otherFields } = record;
+      const nicKey = Object.keys(record)[0];
+      const nic = record[nicKey];
       const nicInfo = extractNicInfo(nic);
 
+      const query = `INSERT INTO records ( nic, birthday, gender, age) VALUES ( ?, ?, ?, ?)`;
+      connection.query(
+        query,
+        [nic, nicInfo.birthday, nicInfo.gender, nicInfo.age],
+        (err, result) => {
+          if (err) {
+            console.error("Error saving data to database:", err);
+            return;
+          }
+          console.log("Record inserted:", result.insertId);
+        }
+      );
+
       return {
-        ...otherFields,
         nic,
         ...nicInfo,
       };
@@ -57,9 +75,13 @@ app.post("/validate", (req, res) => {
       records: validatedRecords,
     };
   });
-  console.log(result);
 
-  res.status(200).json({ result });
+  console.log("Processed Data:", result);
+
+  res.status(200).json({
+    message: "Data validated, saved, and processed successfully",
+    result,
+  });
 });
 
 app.get("/getRecordCount", (req, res) => {
