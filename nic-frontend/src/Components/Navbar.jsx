@@ -11,6 +11,7 @@ import Container from "@mui/material/Container";
 import Button from "@mui/material/Button";
 import MenuItem from "@mui/material/MenuItem";
 import AdbIcon from "@mui/icons-material/Adb";
+import LogoutIcon from "@mui/icons-material/Logout";
 
 const pages = ["Dashboard", "Uploads", "Records"];
 const settings = ["Profile", "Account", "Dashboard", "Logout"];
@@ -38,6 +39,10 @@ function ResponsiveAppBar() {
   const handleNavigate = (page) => {
     navigate(`/${page.toLowerCase()}`);
     handleCloseNavMenu();
+  };
+
+  const handleLogut = () => {
+    localStorage.removeItem("token");
   };
 
   return (
@@ -110,6 +115,9 @@ function ResponsiveAppBar() {
               </Button>
             ))}
           </Box>
+          <Button variant="contained" onClick={handleLogut}>
+            <LogoutIcon />
+          </Button>
         </Toolbar>
       </Container>
     </AppBar>

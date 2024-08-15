@@ -32,9 +32,10 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const navigate = useNavigate();
   const [userData, setUserData] = useState({
-    firstName: "",
-    lastName: "",
+    firstname: "",
+    lastname: "",
     email: "",
+    username: "",
     password: "",
   });
 
@@ -45,7 +46,7 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     let newValue = value;
-    if (name === "firstName" || name === "lastName") {
+    if (name === "firstname" || name === "lastname") {
       newValue = newValue.slice(0, 20); // Limit to 20 characters for Address
       newValue = newValue.replace(/[0-9]/g, ""); // Allow only alphabets
     } else if (name === "email") {
@@ -58,9 +59,10 @@ const Login = () => {
   const handleClose = () => {
     setOpen(false);
     setUserData({
-      firstName: "",
-      lastName: "",
+      firstname: "",
+      lastname: "",
       email: "",
+      username: "",
       password: "",
     });
     setErrors({});
@@ -84,7 +86,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/users/login",
+        "http://localhost:3001/user/login",
         data,
         {
           headers: {
@@ -93,8 +95,8 @@ const Login = () => {
         }
       );
 
-      console.log("Success:", response.data);
-      navigate("/dashboard");
+      const token = response.data.token;
+      localStorage.setItem("token", JSON.stringify({ token }));
     } catch (error) {
       if (error.response) {
         console.error("Error response:", error.response.data);
@@ -107,15 +109,11 @@ const Login = () => {
   };
 
   const handleAddUser = async () => {
+    console.log(userData);
     try {
       const response = await axios.post(
-        "http://localhost:8080/api/users",
-        userData,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        "http://localhost:3001/user/register",
+        userData
       );
 
       console.log("Success:", response.data);
@@ -183,7 +181,7 @@ const Login = () => {
               component="h1"
               sx={{ color: "white", scale: "150%", py: 2 }}
             >
-              Login
+              Welcome Back!
             </Typography>
             <Box
               component="form"
@@ -309,23 +307,23 @@ const Login = () => {
               <Grid item xs={6}>
                 <TextField
                   label="First Name"
-                  name="firstName"
-                  value={userData.firstName}
+                  name="firstname"
+                  value={userData.firstname}
                   onChange={handleChange}
                   fullWidth
-                  error={Boolean(errors.firstName)}
-                  helperText={errors.firstName}
+                  error={Boolean(errors.firstname)}
+                  helperText={errors.firstname}
                 />
               </Grid>
               <Grid item xs={6}>
                 <TextField
                   label="Last Name"
-                  name="lastName"
-                  value={userData.lastName}
+                  name="lastname"
+                  value={userData.lastname}
                   onChange={handleChange}
                   fullWidth
-                  error={Boolean(errors.lastName)}
-                  helperText={errors.lastName}
+                  error={Boolean(errors.lastname)}
+                  helperText={errors.lastname}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -338,6 +336,17 @@ const Login = () => {
                   fullWidth
                   error={Boolean(errors.email)}
                   helperText={errors.email}
+                />
+              </Grid>
+              <Grid item xs={6}>
+                <TextField
+                  label="Username"
+                  name="username"
+                  value={userData.username}
+                  onChange={handleChange}
+                  fullWidth
+                  error={Boolean(errors.username)}
+                  helperText={errors.username}
                 />
               </Grid>
               <Grid item xs={6}>

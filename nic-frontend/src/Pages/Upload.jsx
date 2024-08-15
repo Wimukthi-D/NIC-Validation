@@ -15,6 +15,7 @@ import { UploadFile, Delete } from "@mui/icons-material";
 import Papa from "papaparse";
 import dayjs from "dayjs";
 import axios from "axios";
+import Swal from "sweetalert2";
 
 function Upload() {
   const [files, setFiles] = useState([]);
@@ -43,13 +44,13 @@ function Upload() {
     const currentYear = dayjs().year();
 
     if (nic.length === 10) {
-      // Old format: XXXXXXXXXV
+      // Old format:
       birthYear = parseInt(nic.substring(0, 2), 10) + 1900;
       dayOfYear = parseInt(nic.substring(2, 5), 10);
       gender = dayOfYear > 500 ? "Female" : "Male";
       dayOfYear = dayOfYear > 500 ? dayOfYear - 500 : dayOfYear;
     } else if (nic.length === 12) {
-      // New format: YYYYXXXXXXXXX
+      // New format:
       birthYear = parseInt(nic.substring(0, 4), 10);
       dayOfYear = parseInt(nic.substring(4, 7), 10);
       gender = dayOfYear > 500 ? "Female" : "Male";
@@ -93,23 +94,30 @@ function Upload() {
   console.log(data);
 
   const handleSubmit = () => {
-    fetch("https://localhost:8080/api/nic/save", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+    try {
+      axios.post("http://localhost:3001/nic/save", data).then((response) => {
+        console.log(response);
+      });
 
-    })
-      .then((response) => response.json())
-      .then((data) => console.log(data))
-      .catch((error) => console.error("Error:", error));
+      Swal.fire({
+        icon: "success",
+        title: "Data has been saved successfully",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+
+      setData([]);
+      setFiles([]);
+    } catch (error) {
+      console.log(error);
+      Swal.fire({
+        icon: "error",
+        title: "An error occurred",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    }
   };
-
-  const handleSubmit2 = () => {
-    axios.post("https://localhost:8080/api/nic/save", data)
-    .then((response) => console.log(response))
-  }
 
   return (
     <div className="flex flex-col w-screen h-screen">

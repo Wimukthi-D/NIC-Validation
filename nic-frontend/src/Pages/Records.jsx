@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "../Components/Navbar";
+import axios from "axios";
 
 function Records() {
   return (
-    <div>
+    <div className="flex flex-col w-screen h-screen">
       <Navbar />
     </div>
   );
