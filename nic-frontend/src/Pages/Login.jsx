@@ -94,7 +94,8 @@ const Login = () => {
           },
         }
       );
-
+      axios.put("http://localhost:3001/nic/updateAge");
+      console.log("Success:", response.data);
       const token = response.data.token;
       localStorage.setItem("token", JSON.stringify({ token }));
     } catch (error) {

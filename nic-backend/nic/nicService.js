@@ -51,36 +51,72 @@ app.post("/validate", (req, res) => {
       const nic = record[nicKey];
       const nicInfo = extractNicInfo(nic);
 
-      const query = `INSERT INTO records ( nic, birthday, gender, age) VALUES ( ?, ?, ?, ?)`;
-      connection.query(
-        query,
-        [nic, nicInfo.birthday, nicInfo.gender, nicInfo.age],
-        (err, result) => {
+      return new Promise((resolve) => {
+        const checkQuery = `SELECT nic FROM records WHERE nic = ?`;
+        connection.query(checkQuery, [nic], (err, results) => {
           if (err) {
-            console.error("Error saving data to database:", err);
+            console.error("Error checking database:", err);
+            resolve({
+              nic,
+              ...nicInfo,
+              exist: false,
+              error: "Database error",
+            });
             return;
           }
-          console.log("Record inserted:", result.insertId);
-        }
-      );
 
-      return {
-        nic,
-        ...nicInfo,
-      };
+          if (results.length > 0) {
+            // NIC already exists
+            resolve({
+              nic,
+              ...nicInfo,
+              exist: true,
+            });
+          } else {
+            // NIC doesn't exist, insert it
+            const insertQuery = `INSERT INTO records (nic, birthday, gender, age) VALUES (?, ?, ?, ?)`;
+            connection.query(
+              insertQuery,
+              [nic, nicInfo.birthday, nicInfo.gender, nicInfo.age],
+              (err, result) => {
+                if (err) {
+                  console.error("Error saving data to database:", err);
+                  resolve({
+                    nic,
+                    ...nicInfo,
+                    exist: false,
+                    error: "Database error",
+                  });
+                  return;
+                }
+                console.log("Record inserted:", result.insertId);
+                resolve({
+                  nic,
+                  ...nicInfo,
+                  exist: false,
+                });
+              }
+            );
+          }
+        });
+      });
     });
 
     return {
       fileName,
-      records: validatedRecords,
+      records: Promise.all(validatedRecords),
     };
   });
 
-  console.log("Processed Data:", result);
-
-  res.status(200).json({
-    message: "Data validated, saved, and processed successfully",
-    result,
+  // Wait for all database operations to complete
+  Promise.all(result.map((file) => file.records)).then((records) => {
+    res.status(200).json({
+      message: "Data validated, saved, and processed successfully",
+      result: result.map((file, index) => ({
+        fileName: file.fileName,
+        records: records[index],
+      })),
+    });
   });
 });
 
@@ -122,6 +158,92 @@ app.get("/getYearRange", (req, res) => {
 });
 
 app.get("/getAgeGender", (req, res) => {});
+
+app.get("/getAllRecords", (req, res) => {
+  connection.query(
+    `SELECT nic, DATE_FORMAT(birthday, '%Y-%m-%d') AS birthday, age, gender 
+  FROM records`,
+    (error, results) => {
+      if (error) {
+        console.log("An error occured:", error);
+        return res.status(500).send("An error occured: " + error);
+      }
+      res.json(results);
+    }
+  );
+});
+
+app.post("/getRecordsByFile", (req, res) => {
+  const data = req.body;
+  console.log("Received data:", data);
+
+  const nics = data.map((record) => record.nic);
+  console.log("Extracted NICs:", nics);
+
+  if (nics.length === 0) {
+    return res.status(400).send("No NICs provided");
+  }
+
+  // Construct the query with a placeholder for each NIC
+  const placeholders = nics.map(() => "?").join(", ");
+  const query = `SELECT nic, DATE_FORMAT(birthday, '%Y-%m-%d') AS birthday, age, gender FROM records WHERE nic IN (${placeholders})`;
+
+  connection.query(query, nics, (error, results) => {
+    if (error) {
+      console.log("An error occurred:", error);
+      return res.status(500).send("An error occurred: " + error);
+    }
+    console.log("Results:", results);
+    res.json(results);
+  });
+});
+
+app.put("/updateAge", (req, res) => {
+  connection.query("SELECT nic, birthday FROM records", (error, results) => {
+    if (error) {
+      console.log("An error occurred:", error);
+      return res.status(500).send("An error occurred: " + error);
+    }
+    const updates = results.map((record) => {
+      const nic = record.nic;
+      const birthday = record.birthday;
+      const newAge = dayjs().diff(birthday, "year");
+      return { nic, newAge };
+    });
+
+    if (updates.length === 0) {
+      return res.status(200).send("No records to update");
+    }
+
+    let updateQuery = "UPDATE records SET age = CASE";
+    const nics = [];
+
+    updates.forEach(({ nic, newAge }) => {
+      updateQuery += ` WHEN nic = ? THEN ?`;
+      nics.push(nic, newAge);
+    });
+
+    updateQuery += " ELSE age END WHERE nic IN (";
+    updateQuery += updates.map(({ nic }) => "?").join(", ");
+    updateQuery += ")";
+
+    connection.query(
+      updateQuery,
+      [...nics, ...updates.map(({ nic }) => nic)],
+      (error, result) => {
+        if (error) {
+          console.log("Error in bulk UPDATE query:", error);
+          return res
+            .status(500)
+            .send("An error occurred while updating records: " + error);
+        }
+
+        console.log("Records updated successfully:", result.affectedRows);
+        res.status(200).send("Ages updated successfully");
+      }
+    );
+  });
+});
 
 app.listen(PORT, () => {
   console.log("NIC service running on port: " + PORT);
