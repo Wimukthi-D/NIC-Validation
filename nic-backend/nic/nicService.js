@@ -11,16 +11,33 @@ const extractNicInfo = (nic) => {
     nic = String(nic);
   }
 
-  if (
-    !nic ||
-    (nic.length !== 10 && nic.length !== 12) ||
-    (nic.length === 10 && !/^\d.*v$/i.test(nic)) ||
-    (nic.length === 12 && !/^\d+$/.test(nic))
-  ) {
+  if (!nic) {
+    return {
+      nic: "Empty Record",
+      birthday: "",
+      gender: "",
+      age: "",
+      isValid: false,
+    };
+  } else if (nic.length !== 10 && nic.length !== 12) {
     return {
       birthday: "Invalid NIC",
-      gender: "N/A",
-      age: "N/A",
+      gender: "Incorrect Length",
+      age: "",
+      isValid: false,
+    };
+  } else if (nic.length === 10 && !/^\d.*v$/i.test(nic)) {
+    return {
+      birthday: "Invalid NIC",
+      gender: "Invalid Format",
+      age: "",
+      isValid: false,
+    };
+  } else if (nic.length === 12 && !/^\d+$/.test(nic)) {
+    return {
+      birthday: "Invalid NIC",
+      gender: "Invalid Format",
+      age: "",
       isValid: false,
     };
   }
@@ -37,8 +54,8 @@ const extractNicInfo = (nic) => {
     ) {
       return {
         birthday: "Invalid NIC",
-        gender: "N/A",
-        age: "N/A",
+        gender: "Invalid birthyear format",
+        age: "",
         isValid: false,
       };
     }
@@ -53,8 +70,8 @@ const extractNicInfo = (nic) => {
     ) {
       return {
         birthday: "Invalid NIC",
-        gender: "N/A",
-        age: "N/A",
+        gender: "Invalid birthyear format",
+        age: "",
         isValid: false,
       };
     }
@@ -68,8 +85,8 @@ const extractNicInfo = (nic) => {
   if (age < 17) {
     return {
       birthday: "Invalid NIC",
-      gender: "N/A",
-      age: "N/A",
+      gender: "Underage",
+      age: "",
       isValid: false,
     };
   }

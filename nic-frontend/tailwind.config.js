@@ -10,6 +10,10 @@ module.exports = {
       width: {
         800: "800px",
       },
+      zIndex: {
+        2000: "2000",
+        1200: "1200",
+      },
     },
   },
   plugins: [],

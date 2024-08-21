@@ -14,6 +14,9 @@ import AdbIcon from "@mui/icons-material/Adb";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Drawer from "@mui/material/Drawer";
 import Upload from "../Pages/Upload";
+import { Timer } from "@mui/icons-material";
+import zIndex from "@mui/material/styles/zIndex";
+import Swal from "sweetalert2";
 
 const pages = ["Dashboard", "Upload", "Records"];
 
@@ -55,6 +58,8 @@ function ResponsiveAppBar() {
   const handleLogut = () => {
     localStorage.removeItem("token");
   };
+
+  const handleResponse = () => {};
 
   return (
     <>
@@ -115,8 +120,8 @@ function ResponsiveAppBar() {
         </Container>
       </AppBar>
       <Drawer anchor="left" open={drawerOpen} onClose={handleDrawerClose}>
-        <Box  role="presentation">
-          <Upload />
+        <Box role="presentation">
+          <Upload onResponse={handleResponse} />
         </Box>
       </Drawer>
     </>

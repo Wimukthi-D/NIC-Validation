@@ -20,7 +20,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useDropzone } from "react-dropzone";
 
-function Upload() {
+function Upload({ onResponse }) {
   const [files, setFiles] = useState([]);
   const [data, setData] = useState({});
   const [savedRecords, setSavedRecords] = useState([]);
@@ -63,18 +63,11 @@ function Upload() {
     axios
       .post("http://localhost:3001/nic/validate", combinedData)
       .then((response) => {
-        if (response.status === 200) {
-          Swal.fire({
-            icon: "success",
-            title: "Data has been saved successfully",
-            showConfirmButton: false,
-            timer: 1500,
-          });
-          setSavedRecords(response.data.result);
-          setUploadComplete(true); // Hide the upload section
-          setData([]);
-          setFiles([]);
-        }
+        onResponse(response.status);
+        setSavedRecords(response.data.result);
+        setUploadComplete(true); // Hide the upload section
+        setData([]);
+        setFiles([]);
       })
       .catch((error) => {
         console.log(error);
@@ -83,6 +76,7 @@ function Upload() {
           title: "An error occurred",
           showConfirmButton: false,
           timer: 1500,
+          zindex: 99999,
         });
       });
   };
@@ -191,18 +185,28 @@ function Upload() {
                     </TableHead>
                     <TableBody>
                       {fileData.records.map((record, idx) => (
-                        <TableRow
-                          key={idx}
-                          sx={{
-                            bgcolor:
-                              record.birthday === "Invalid NIC"
-                                ? "#ef9a9a"
-                                : "inherit",
-                          }}
-                        >
-                          <TableCell>{record.nic}</TableCell>
-                          <TableCell>{record.birthday}</TableCell>
-                          <TableCell>{record.gender}</TableCell>
+                        <TableRow key={idx}>
+                          <TableCell
+                            sx={{
+                              color: !record.isValid ? "#ff1744" : "inherit",
+                            }}
+                          >
+                            {record.nic}
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: !record.isValid ? "#ff1744" : "inherit",
+                            }}
+                          >
+                            {record.birthday}
+                          </TableCell>
+                          <TableCell
+                            sx={{
+                              color: !record.isValid ? "#ff1744" : "inherit",
+                            }}
+                          >
+                            {record.gender}
+                          </TableCell>
                           <TableCell>{record.age}</TableCell>
                         </TableRow>
                       ))}

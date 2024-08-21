@@ -13,6 +13,7 @@ import { TextField, Button, Chip } from "@mui/material";
 import { UploadFile } from "@mui/icons-material";
 import Papa from "papaparse";
 import ReportDialog from "../Components/ReportDialog";
+import MenuItem from "@mui/material/MenuItem";
 
 const columns = [
   { id: "nic", label: "NIC", minWidth: 170, align: "center" },
@@ -39,6 +40,7 @@ function Records() {
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [nicFilter, setNicFilter] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [genderFilter, setGenderFilter] = useState("");
 
   useEffect(() => {
     axios.get("http://localhost:3001/nic/getAllRecords").then((response) => {
@@ -75,7 +77,17 @@ function Records() {
           axios
             .post("http://localhost:3001/nic/getRecordsByFile", data)
             .then((response) => {
-              setFilteredRecords(() => [...response.data]);
+              const combinedRecords = [...records, ...response.data];
+              setRecords(combinedRecords); // Update the records state with the new data
+
+              // Apply existing filters
+              const nicFiltered = applyNicFilter(combinedRecords, nicFilter);
+              const genderFiltered = applyGenderFilter(
+                nicFiltered,
+                genderFilter
+              );
+
+              setFilteredRecords(genderFiltered);
               console.log(response.data);
             })
             .catch((error) => {
@@ -86,16 +98,39 @@ function Records() {
     });
   };
 
+  const applyNicFilter = (data, filter) => {
+    if (filter === "") return data;
+    return data.filter(
+      (record) =>
+        record.nic.toLowerCase().includes(filter) ||
+        record.age.toString().includes(filter) ||
+        record.birthday.toLowerCase().includes(filter)
+    );
+  };
+
+  const applyGenderFilter = (data, filter) => {
+    if (filter === "") return data;
+    return data.filter((record) => record.gender.toLowerCase() === filter);
+  };
+
   const handleNicFilterChange = (event) => {
-    const value = event.target.value;
+    const value = event.target.value.toLowerCase();
     setNicFilter(value);
 
-    if (value === "") {
-      setFilteredRecords(records);
-    } else {
-      const filtered = records.filter((record) => record.nic.includes(value));
-      setFilteredRecords(filtered);
-    }
+    const nicFiltered = applyNicFilter(records, value);
+    const genderFiltered = applyGenderFilter(nicFiltered, genderFilter);
+
+    setFilteredRecords(genderFiltered);
+  };
+
+  const handleGenderFilterChange = (event) => {
+    const gender = event.target.value.toLowerCase(); // Convert to lowercase for consistency
+    setGenderFilter(gender);
+
+    const nicFiltered = applyNicFilter(records, nicFilter);
+    const genderFiltered = applyGenderFilter(nicFiltered, gender);
+
+    setFilteredRecords(genderFiltered);
   };
 
   const handleDelete = (index) => () => {
@@ -117,16 +152,33 @@ function Records() {
     <div className="flex flex-col items-center w-screen h-screen">
       <Navbar />
 
-      <div className="flex mt-10 space-x-2">
-        <TextField
-          id="outlined-basic"
-          label="Search by NIC"
-          variant="outlined"
-          type="number"
-          size="small"
-          value={nicFilter}
-          onChange={handleNicFilterChange}
-        />
+      <div className="flex mt-10 w-2/3 justify-center space-x-2">
+        <div className="flex w-1/2 gap-4">
+          <TextField
+            id="gender-filter"
+            label="Gender"
+            variant="outlined"
+            size="small"
+            select
+            value={genderFilter}
+            fullWidth
+            onChange={handleGenderFilterChange}
+          >
+            <MenuItem value="">All</MenuItem>
+            <MenuItem value="male">Male</MenuItem>
+            <MenuItem value="female">Female</MenuItem>
+          </TextField>
+          <TextField
+            id="outlined-basic"
+            label="Search"
+            variant="outlined"
+            size="small"
+            value={nicFilter}
+            fullWidth
+            onChange={handleNicFilterChange}
+          />
+        </div>
+
         <div className="flex items-center space-x-2">
           <div className="flex items-center space-x-2">
             <input
