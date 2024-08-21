@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import ProtectedRoutes from "./ProtectedRoutes";
 import NotFoundPage from "./Pages/NotFound.jsx";
+import Loader from "./Components/Loader.jsx";
 
 const publicRoutes = ["/", "/*"];
 
@@ -64,7 +65,7 @@ function App() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>; // Render loading indicator until authentication status is determined
+    return <Loader />;
   }
 
   return (
@@ -91,7 +92,6 @@ function RenderProtectedRoutes(isAuthenticated, token) {
       {isAuthenticated && (
         <>
           <Route exact path="/dashboard" element={<Dashboard />} />
-          <Route path="/uploads" element={<Uploads />} />
           <Route path="/records" element={<Records />} />
         </>
       )}
