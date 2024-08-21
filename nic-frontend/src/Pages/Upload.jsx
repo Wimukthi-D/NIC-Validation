@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Navbar from "../Components/Navbar";
 import {
   Button,
   Table,
@@ -10,22 +9,25 @@ import {
   TableRow,
   Paper,
   IconButton,
+  Typography,
+  Box,
+  Divider,
 } from "@mui/material";
 import { UploadFile, Delete } from "@mui/icons-material";
 import Papa from "papaparse";
-import dayjs from "dayjs";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { useDropzone } from "react-dropzone";
 
 function Upload() {
   const [files, setFiles] = useState([]);
   const [data, setData] = useState({});
   const [savedRecords, setSavedRecords] = useState([]);
+  const [uploadComplete, setUploadComplete] = useState(false);
 
-  const handleFileChange = (event) => {
-    const selectedFiles = Array.from(event.target.files);
-
-    selectedFiles.forEach((file) => {
+  const onDrop = (acceptedFiles) => {
+    acceptedFiles.forEach((file) => {
       Papa.parse(file, {
         complete: (result) => {
           setData((prevData) => ({
@@ -37,8 +39,10 @@ function Upload() {
       });
     });
 
-    setFiles([...files, ...selectedFiles]);
+    setFiles((prevFiles) => [...prevFiles, ...acceptedFiles]);
   };
+
+  const { getRootProps, getInputProps } = useDropzone({ onDrop });
 
   const handleRemoveFile = (index) => {
     const updatedFiles = files.filter((_, i) => i !== index);
@@ -56,144 +60,161 @@ function Upload() {
       data: data[file.name],
     }));
 
-    try {
-      axios
-        .post("http://localhost:3001/nic/validate", combinedData)
-        .then((response) => {
-          if (response.status === 200) {
-            Swal.fire({
-              icon: "success",
-              title: "Data has been saved successfully",
-              showConfirmButton: false,
-              timer: 1500,
-            });
-          }
-          console.log(response.data.result);
-          setSavedRecords(response.data.result);
+    axios
+      .post("http://localhost:3001/nic/validate", combinedData)
+      .then((response) => {
+        if (response.status === 200) {
           Swal.fire({
             icon: "success",
             title: "Data has been saved successfully",
             showConfirmButton: false,
             timer: 1500,
           });
-
+          setSavedRecords(response.data.result);
+          setUploadComplete(true); // Hide the upload section
           setData([]);
           setFiles([]);
-        })
-        .catch((error) => {
-          console.log(error);
-          Swal.fire({
-            icon: "error",
-            title: "An error occurred",
-            showConfirmButton: false,
-            timer: 1500,
-          });
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        Swal.fire({
+          icon: "error",
+          title: "An error occurred",
+          showConfirmButton: false,
+          timer: 1500,
         });
-    } catch (error) {
-      console.log(error);
-      Swal.fire({
-        icon: "error",
-        title: "An error occurred",
-        showConfirmButton: false,
-        timer: 1500,
       });
-    }
   };
 
   return (
-    <div className="flex flex-col w-screen h-screen">
-      <Navbar />
-      <div className="flex w-full h-full">
-        <div className="flex flex-col w-1/3 items-center h-full p-4 space-y-4 mt-10">
-          {files.map((file, index) => (
-            <div key={index} className="flex items-center space-x-2">
-              <input
-                accept=".csv"
-                style={{ display: "none" }}
-                id={`raised-button-file-${index}`}
-                type="file"
-                onChange={(e) => handleFileChange(e, index)}
-              />
-              <label htmlFor={`raised-button-file-${index}`}>
+    <Box
+      className="flex flex-col w-full h-full"
+      sx={{ p: 4, bgcolor: "lightcyan" }}
+    >
+      <Box className="flex w-full justify-items-center ">
+        {!uploadComplete && (
+          <Box className="flex flex-col w-full items-center p-4 space-y-4 my-20">
+            <Box
+              {...getRootProps()}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px dashed gray",
+                borderRadius: "12px",
+                px: 4,
+                py: 15,
+                cursor: "pointer",
+                bgcolor: "lightblue",
+              }}
+            >
+              <input {...getInputProps()} accept=".csv" />
+              <Typography variant="h6" color="textSecondary">
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <FileUploadIcon sx={{ fontSize: "8rem", color: "#607d8b" }} />
+                </Box>
+                Drop or Click here to upload files
+              </Typography>
+            </Box>
+
+            {files.map((file, index) => (
+              <Box
+                key={index}
+                className="flex items-center space-x-2"
+                sx={{ mt: 2 }}
+              >
                 <Button
                   variant="outlined"
                   component="span"
                   startIcon={<UploadFile />}
+                  sx={{ textTransform: "none" }}
                 >
-                  {file ? file.name : "Upload CSV File"}
+                  {file.name}
                 </Button>
-              </label>
-              {file && (
                 <IconButton
                   onClick={() => handleRemoveFile(index)}
-                  color="secondary"
+                  color="error"
                 >
                   <Delete />
                 </IconButton>
-              )}
-            </div>
-          ))}
-          <div className="flex items-center space-x-2">
-            <input
-              accept=".csv"
-              style={{ display: "none" }}
-              id="raised-button-file"
-              type="file"
-              onChange={handleFileChange}
-              multiple
-            />
-            <label htmlFor="raised-button-file">
-              <Button
-                variant="contained"
-                component="span"
-                startIcon={<UploadFile />}
-              >
-                Upload Files
-              </Button>
-            </label>
-          </div>
-          <div className="flex w1/2">
+              </Box>
+            ))}
+
             <Button
               variant="contained"
               color="primary"
               onClick={handleUpload}
               disabled={files.length === 0}
+              sx={{ mt: 4, width: "50%" }}
             >
               Submit
             </Button>
-          </div>
-        </div>
-        <div className="flex flex-col w-2/3 h-full p-4">
-          {savedRecords.map((fileData, index) => (
-            <div key={index} className="mb-6">
-              <h2 className="text-lg font-bold mb-2">{fileData.fileName}</h2>
-              <TableContainer component={Paper}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>NIC</TableCell>
-                      <TableCell>Birthday</TableCell>
-                      <TableCell>Gender</TableCell>
-                      <TableCell>Age</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {fileData.records.map((record, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{record.nic}</TableCell>
-                        <TableCell>{record.birthday}</TableCell>
-                        <TableCell>{record.gender}</TableCell>
-                        <TableCell>{record.age}</TableCell>
+          </Box>
+        )}
+
+        {uploadComplete && (
+          <Box className="flex flex-col w-full">
+            {savedRecords.map((fileData, index) => (
+              <Box
+                key={index}
+                className="flex-col w-full p-4"
+                sx={{
+                  mb: 4,
+                  border: 1,
+                  borderRadius: 2,
+                  borderColor: "lightgray",
+                  bgcolor: "white",
+                }}
+              >
+                <Typography variant="h6" color="textPrimary" sx={{ mb: 2 }}>
+                  {fileData.fileName}
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                <TableContainer component={Paper} sx={{ mb: 2 }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: "lightblue" }}>
+                        <TableCell>NIC</TableCell>
+                        <TableCell>Birthday</TableCell>
+                        <TableCell>Gender</TableCell>
+                        <TableCell>Age</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+                    </TableHead>
+                    <TableBody>
+                      {fileData.records.map((record, idx) => (
+                        <TableRow
+                          key={idx}
+                          sx={{
+                            bgcolor:
+                              record.birthday === "Invalid NIC"
+                                ? "#ef9a9a"
+                                : "inherit",
+                          }}
+                        >
+                          <TableCell>{record.nic}</TableCell>
+                          <TableCell>{record.birthday}</TableCell>
+                          <TableCell>{record.gender}</TableCell>
+                          <TableCell>{record.age}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            ))}
+          </Box>
+        )}
+      </Box>
+    </Box>
   );
 }
 

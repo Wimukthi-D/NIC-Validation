@@ -11,8 +11,18 @@ const extractNicInfo = (nic) => {
     nic = String(nic);
   }
 
-  if (!nic || (nic.length !== 10 && nic.length !== 12)) {
-    return { birthday: "Invalid NIC", gender: "N/A", age: "N/A" };
+  if (
+    !nic ||
+    (nic.length !== 10 && nic.length !== 12) ||
+    (nic.length === 10 && !/^\d.*v$/i.test(nic)) ||
+    (nic.length === 12 && !/^\d+$/.test(nic))
+  ) {
+    return {
+      birthday: "Invalid NIC",
+      gender: "N/A",
+      age: "N/A",
+      isValid: false,
+    };
   }
 
   let birthYear, dayOfYear, gender, age;
@@ -21,11 +31,33 @@ const extractNicInfo = (nic) => {
   if (nic.length === 10) {
     birthYear = parseInt(nic.substring(0, 2), 10) + 1900;
     dayOfYear = parseInt(nic.substring(2, 5), 10);
+    if (
+      (dayOfYear < 500 && dayOfYear > 366) ||
+      (dayOfYear < 999 && dayOfYear > 866)
+    ) {
+      return {
+        birthday: "Invalid NIC",
+        gender: "N/A",
+        age: "N/A",
+        isValid: false,
+      };
+    }
     gender = dayOfYear > 500 ? "Female" : "Male";
     dayOfYear = dayOfYear > 500 ? dayOfYear - 500 : dayOfYear;
   } else if (nic.length === 12) {
     birthYear = parseInt(nic.substring(0, 4), 10);
     dayOfYear = parseInt(nic.substring(4, 7), 10);
+    if (
+      (dayOfYear < 500 && dayOfYear > 366) ||
+      (dayOfYear < 999 && dayOfYear > 866)
+    ) {
+      return {
+        birthday: "Invalid NIC",
+        gender: "N/A",
+        age: "N/A",
+        isValid: false,
+      };
+    }
     gender = dayOfYear > 500 ? "Female" : "Male";
     dayOfYear = dayOfYear > 500 ? dayOfYear - 500 : dayOfYear;
   }
@@ -33,10 +65,19 @@ const extractNicInfo = (nic) => {
   const birthDate = dayjs(`${birthYear}-01-01`).add(dayOfYear - 1, "day");
   age = currentYear - birthDate.year();
 
+  if (age < 17) {
+    return {
+      birthday: "Invalid NIC",
+      gender: "N/A",
+      age: "N/A",
+      isValid: false,
+    };
+  }
   return {
     birthday: birthDate.format("YYYY-MM-DD"),
     gender,
     age,
+    isValid: true,
   };
 };
 
@@ -50,6 +91,16 @@ app.post("/validate", (req, res) => {
       const nicKey = Object.keys(record)[0];
       const nic = record[nicKey];
       const nicInfo = extractNicInfo(nic);
+
+      if (!nicInfo.isValid) {
+        // If NIC is invalid, resolve immediately without inserting into the database
+        return Promise.resolve({
+          nic,
+          ...nicInfo,
+          exist: false,
+          error: "Invalid NIC",
+        });
+      }
 
       return new Promise((resolve) => {
         const checkQuery = `SELECT nic FROM records WHERE nic = ?`;

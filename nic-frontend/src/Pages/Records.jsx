@@ -12,6 +12,7 @@ import TableRow from "@mui/material/TableRow";
 import { TextField, Button, Chip } from "@mui/material";
 import { UploadFile } from "@mui/icons-material";
 import Papa from "papaparse";
+import ReportDialog from "../Components/ReportDialog";
 
 const columns = [
   { id: "nic", label: "NIC", minWidth: 170, align: "center" },
@@ -21,14 +22,12 @@ const columns = [
     label: "Gender",
     minWidth: 170,
     align: "center",
-    format: (value) => value.toLocaleString("en-US"),
   },
   {
     id: "age",
     label: "Age",
     minWidth: 170,
     align: "center",
-    format: (value) => value.toLocaleString("en-US"),
   },
 ];
 
@@ -39,6 +38,7 @@ function Records() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [nicFilter, setNicFilter] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
     axios.get("http://localhost:3001/nic/getAllRecords").then((response) => {
@@ -67,7 +67,7 @@ function Records() {
         header: false, // Set to false to ignore column headers
         complete: (results) => {
           const data = results.data.map((item) => {
-            return { nic: item[0] }; // Assuming the first column has the numbers
+            return { nic: item[0] }; // Assuming the first column has the NIC
           });
           console.log("Formatted data:", data);
 
@@ -105,6 +105,14 @@ function Records() {
     handleNicFilterChange({ target: { value: "" } });
   };
 
+  const handleReports = () => {
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+  };
+
   return (
     <div className="flex flex-col items-center w-screen h-screen">
       <Navbar />
@@ -114,7 +122,7 @@ function Records() {
           id="outlined-basic"
           label="Search by NIC"
           variant="outlined"
-          type="number" 
+          type="number"
           size="small"
           value={nicFilter}
           onChange={handleNicFilterChange}
@@ -141,6 +149,9 @@ function Records() {
           {uploadedFiles.map((file, index) => (
             <Chip key={index} label={file} onDelete={handleDelete(index)} />
           ))}
+          <Button variant="contained" color="primary" onClick={handleReports}>
+            Generate Report
+          </Button>
         </div>
       </div>
       <div className="flex flex-col w-2/3 h-full m-4">
@@ -151,6 +162,7 @@ function Records() {
                 <TableRow>
                   {columns.map((column) => (
                     <TableCell
+                      sx={{ bgcolor: "lightblue" }}
                       key={column.id}
                       align={column.align}
                       style={{ minWidth: column.minWidth }}
@@ -163,16 +175,19 @@ function Records() {
               <TableBody>
                 {filteredRecords
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((row, index) => {
+                  .map((row) => {
                     return (
-                      <TableRow hover role="checkbox" tabIndex={-1} key={index}>
+                      <TableRow
+                        hover
+                        role="checkbox"
+                        tabIndex={-1}
+                        key={row.nic}
+                      >
                         {columns.map((column) => {
                           const value = row[column.id];
                           return (
                             <TableCell key={column.id} align={column.align}>
-                              {column.format && typeof value === "number"
-                                ? column.format(value)
-                                : value}
+                              {value}
                             </TableCell>
                           );
                         })}
@@ -193,6 +208,13 @@ function Records() {
           />
         </Paper>
       </div>
+
+      {/* Dialog Component */}
+      <ReportDialog
+        open={isDialogOpen}
+        onClose={handleCloseDialog}
+        filteredRecords={filteredRecords}
+      />
     </div>
   );
 }
